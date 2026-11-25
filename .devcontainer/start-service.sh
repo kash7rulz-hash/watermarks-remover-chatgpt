@@ -2,30 +2,47 @@
 set -euo pipefail
 
 if [[ -z "${WATERMARKS_SERVER_API_KEY:-}" ]]; then
-  echo "Watermarks Remover is not started yet. Add the WATERMARKS_SERVER_API_KEY Codespaces secret, grant access to this repository, then restart the Codespace."
-  exit 0
+  echo "Missing WATERMARKS_SERVER_API_KEY. Add it under GitHub Settings > Codespaces > Secrets and grant access to this repository." >&2
+  exit 1
 fi
 
-LOG_FILE=/tmp/watermarks-remover.log
-nohup python3 service/scripts/server.py --host 0.0.0.0 --port 10000 \
-  >"$LOG_FILE" 2>&1 </dev/null &
+REST_LOG=/tmp/watermarks-remover-rest.log
+MCP_LOG=/tmp/watermarks-remover-mcp.log
+PUBLIC_MCP_URL="https://${CODESPACE_NAME}-10001.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
 
-service_pid=$!
-for _ in $(seq 1 40); do
-  if curl --fail --silent \
-      -H "Authorization: Bearer ${WATERMARKS_SERVER_API_KEY}" \
+if ! curl --fail --silent -H "Authorization: Bearer ${WATERMARKS_SERVER_API_KEY}" \
+    http://127.0.0.1:10000/health >/dev/null 2>&1; then
+  nohup python3 service/scripts/server.py --host 0.0.0.0 --port 10000 \
+    >"$REST_LOG" 2>&1 </dev/null &
+fi
+
+if ! curl --fail --silent http://127.0.0.1:10001/health >/dev/null 2>&1; then
+  nohup env PORT=10001 PUBLIC_BASE_URL="$PUBLIC_MCP_URL" \
+    python3 service/scripts/mcp_gateway.py >"$MCP_LOG" 2>&1 </dev/null &
+fi
+
+rest_ok=false
+mcp_ok=false
+for _ in $(seq 1 45); do
+  if curl --fail --silent -H "Authorization: Bearer ${WATERMARKS_SERVER_API_KEY}" \
       http://127.0.0.1:10000/health >/dev/null 2>&1; then
-    echo "Watermarks Remover API is running on port 10000."
-    exit 0
+    rest_ok=true
   fi
-  if ! kill -0 "$service_pid" 2>/dev/null; then
-    echo "Watermarks Remover failed to start. Recent log output:" >&2
-    tail -n 80 "$LOG_FILE" >&2 || true
-    exit 1
+  if curl --fail --silent http://127.0.0.1:10001/health >/dev/null 2>&1; then
+    mcp_ok=true
+  fi
+  if [[ "$rest_ok" == true && "$mcp_ok" == true ]]; then
+    echo "Watermarks Remover REST API is healthy on port 10000."
+    echo "Watermarks Remover MCP gateway is healthy on port 10001."
+    echo "MCP endpoint: ${PUBLIC_MCP_URL}/mcp"
+    exit 0
   fi
   sleep 1
 done
 
-echo "Watermarks Remover did not become healthy within 40 seconds. Recent log output:" >&2
-tail -n 80 "$LOG_FILE" >&2 || true
+echo "Watermarks Remover services did not both become healthy." >&2
+echo "--- REST log ---" >&2
+tail -n 80 "$REST_LOG" >&2 2>/dev/null || true
+echo "--- MCP log ---" >&2
+tail -n 120 "$MCP_LOG" >&2 2>/dev/null || true
 exit 1

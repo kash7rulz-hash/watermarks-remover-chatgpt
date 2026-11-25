@@ -1,21 +1,25 @@
 # GitHub Codespaces deployment
 
-This configuration runs the repository's existing HTTP service on port 10000.
+This Codespaces configuration runs both supported service surfaces:
 
-Before using the service, add a GitHub Codespaces secret named
-`WATERMARKS_SERVER_API_KEY` and grant access only to this repository. Use a
-random value of at least 32 characters. Do not put the key in this repository.
-The service requires a bearer token for its API.
+- REST API: forwarded port 10000
+- MCP Streamable HTTP gateway: forwarded port 10001, endpoint `/mcp`
 
-The Codespaces port is configured as public so an external client can reach it.
-The API itself remains bearer-authenticated. Anyone who knows the forwarded URL
-can reach the port, but cannot use the API without the secret.
+Both services require the repository-scoped Codespaces secret
+`WATERMARKS_SERVER_API_KEY`. The MCP endpoint uses bearer authentication.
+Do not put the key in this repository or in plugin files.
 
-The `postStartCommand` starts the service whenever the Codespace starts.
-The forwarded port URL is the API base URL. Append `/health`,
-`/capabilities`, `/inspect`, or `/clean` as needed. The HTTP contract matches
-the installed `remove-ai-marks` client skill.
+The MCP gateway returns short-lived (15-minute) download URLs for cleaned
+outputs. The gateway constructs those links from the Codespaces forwarded
+hostname. The Codespaces ports are public so ChatGPT can reach them; the
+MCP API remains protected by the bearer key.
 
-The text-rewrite backend is not configured by this deployment. Deterministic
-Unicode cleanup and supported file/container metadata operations remain
-available subject to the capabilities reported by `/capabilities`.
+The native REST API matches the service contract used by the separate
+`remove-ai-marks` skill. The MCP gateway exposes equivalent chat tools
+`get_capabilities`, `inspect_file`, and `clean_file`.
+
+The text-rewrite backend is not configured by default. Deterministic Unicode
+cleaning and supported file/container metadata operations are available
+subject to the live capability report. Pixel-level operations and statistical
+text rewriting must not be claimed unless their optional backends are installed
+and reported by the service.

@@ -20,7 +20,8 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import server as engine  # noqa: E402
 
-from mcp.server import MCPServer  # noqa: E402
+from mcp.server.mcpserver import MCPServer  # noqa: E402
+from mcp.server.transport_security import TransportSecuritySettings  # noqa: E402
 from starlette.requests import Request  # noqa: E402
 from starlette.responses import JSONResponse, Response  # noqa: E402
 from starlette.routing import Route  # noqa: E402
@@ -242,12 +243,18 @@ class BearerAuthMiddleware:
 
 def main() -> None:
     port = int(os.environ.get("PORT", "10000"))
+    external_url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("PUBLIC_BASE_URL")
+    external_host = __import__("urllib.parse", fromlist=["urlparse"]).urlparse(
+        external_url or ""
+    ).netloc
+    allowed_hosts = [external_host] if external_host else ["localhost:*", "127.0.0.1:*"]
     app = mcp.streamable_http_app(
         streamable_http_path="/mcp",
         stateless_http=True,
         json_response=True,
         host="0.0.0.0",
         max_request_body_size=max(16 * 1024 * 1024, MAX_INPUT_BYTES * 2),
+        transport_security=TransportSecuritySettings(allowed_hosts=allowed_hosts),
     )
     app.routes.extend(
         [

@@ -1670,7 +1670,7 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--host", default=os.environ.get("WATERMARKS_SERVER_HOST", "127.0.0.1"))
     p.add_argument(
-        "--port", type=int, default=int(os.environ.get("WATERMARKS_SERVER_PORT", "8765"))
+        "--port", type=int, default=int(os.environ.get("PORT", os.environ.get("WATERMARKS_SERVER_PORT", "8765")))
     )
     p.add_argument("--api-key", default=API_KEY, help="require this bearer token (default: none)")
     p.add_argument(

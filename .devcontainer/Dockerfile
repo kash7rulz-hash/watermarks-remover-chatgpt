@@ -23,4 +23,6 @@ RUN curl -fsSL -o /tmp/c2patool.tar.gz \
     && install -m 0755 /tmp/c2patool/c2patool /usr/local/bin/c2patool \
     && rm -rf /tmp/c2patool /tmp/c2patool.tar.gz
 
+RUN python3 -m pip install --no-cache-dir "mcp>=2,<3" "uvicorn>=0.34,<1"
+
 USER vscode

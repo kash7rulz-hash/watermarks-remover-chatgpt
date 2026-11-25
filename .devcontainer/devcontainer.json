@@ -1,7 +1,10 @@
 {
-  "name": "Watermarks Remover API",
+  "name": "Watermarks Remover OAuth",
   "build": {
     "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "remoteUser": "vscode",
   "containerEnv": {
@@ -11,13 +14,11 @@
   "portsAttributes": {
     "10000": {
       "label": "Watermarks Remover REST API",
-      "onAutoForward": "notify",
-      "visibility": "public"
+      "onAutoForward": "notify"
     },
     "10001": {
       "label": "Watermarks Remover MCP",
-      "onAutoForward": "notify",
-      "visibility": "public"
+      "onAutoForward": "notify"
     }
   },
   "postStartCommand": "bash .devcontainer/start-service.sh",

@@ -250,7 +250,7 @@ def main() -> None:
     allowed_hosts = [external_host] if external_host else ["localhost:*", "127.0.0.1:*"]
     app = mcp.streamable_http_app(
         streamable_http_path="/mcp",
-        stateless_http=True,
+        stateless_http=False,
         json_response=True,
         host="0.0.0.0",
         max_request_body_size=max(16 * 1024 * 1024, MAX_INPUT_BYTES * 2),

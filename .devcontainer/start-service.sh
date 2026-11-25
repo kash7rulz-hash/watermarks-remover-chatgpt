@@ -36,17 +36,29 @@ for _ in $(seq 1 60); do
     mcp_ok=true
   fi
   if [[ "$rest_ok" == true && "$mcp_ok" == true ]]; then
-    echo "Watermarks Remover REST API is healthy on port 10000."
-    echo "Watermarks Remover OAuth-protected MCP gateway is healthy on port 10001."
-    echo "MCP endpoint: ${PUBLIC_MCP_URL}/mcp"
-    exit 0
+    break
   fi
   sleep 1
 done
 
-echo "Watermarks Remover services did not both become healthy." >&2
-echo "--- REST log ---" >&2
-tail -n 80 "$REST_LOG" >&2 2>/dev/null || true
-echo "--- MCP log ---" >&2
-tail -n 160 "$MCP_LOG" >&2 2>/dev/null || true
-exit 1
+if [[ "$rest_ok" != true || "$mcp_ok" != true ]]; then
+  echo "Watermarks Remover services did not both become healthy." >&2
+  echo "--- REST log ---" >&2
+  tail -n 80 "$REST_LOG" >&2 2>/dev/null || true
+  echo "--- MCP log ---" >&2
+  tail -n 160 "$MCP_LOG" >&2 2>/dev/null || true
+  exit 1
+fi
+
+if ! command -v gh >/dev/null 2>&1; then
+  echo "GitHub CLI is required to set public port visibility. The devcontainer feature did not install gh." >&2
+  exit 1
+fi
+
+# GitHub resets forwarded ports to private on every Codespace restart.
+# Make both public only after the authenticated services are healthy.
+gh codespace ports visibility 10000:public 10001:public -c "$CODESPACE_NAME"
+
+echo "Watermarks Remover REST API is healthy on port 10000."
+echo "Watermarks Remover OAuth-protected MCP gateway is healthy on port 10001."
+echo "MCP endpoint: ${PUBLIC_MCP_URL}/mcp"

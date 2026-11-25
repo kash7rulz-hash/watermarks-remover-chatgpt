@@ -60,6 +60,7 @@ COPY scripts /app/scripts
 RUN chmod -R a+rX /app/scripts
 
 RUN python3 -m pip install --no-cache-dir "pip==26.2.1"
+RUN python3 -m pip install --no-cache-dir "mcp>=2,<3" "uvicorn>=0.34,<1"
 
 # Unprivileged runtime user. The service only reads request bodies and writes
 # to temp files / stdout, so nothing under /app needs root.
@@ -73,4 +74,4 @@ ENV WATERMARKS_SERVER_VERSION=${VERSION} \
 WORKDIR /app
 EXPOSE 8765
 ENTRYPOINT ["python3"]
-CMD ["/app/scripts/server.py", "--host", "0.0.0.0"]
+CMD ["/app/scripts/mcp_gateway.py"]

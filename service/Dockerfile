@@ -4,8 +4,8 @@
 # Build from the repository root (build context = service/):
 #   docker build -f service/Dockerfile -t watermarks-remover service/
 #
-# Run (HTTP on loopback host port, unprivileged, read-only rootfs):
-#   docker run --rm -p 127.0.0.1:8765:8765 \
+# Run (HTTP on loopback host port 10000, unprivileged, read-only rootfs):
+#   docker run --rm -p 127.0.0.1:10000:10000 \
 #     --read-only --tmpfs /tmp \
 #     watermarks-remover
 #
@@ -72,6 +72,6 @@ ENV WATERMARKS_SERVER_VERSION=${VERSION} \
     PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
-EXPOSE 8765
+EXPOSE 10000
 ENTRYPOINT ["python3"]
 CMD ["/app/scripts/mcp_gateway.py"]

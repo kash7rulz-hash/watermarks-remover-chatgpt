@@ -7,10 +7,15 @@
   "containerEnv": {
     "PORT": "10000"
   },
-  "forwardPorts": [10000],
+  "forwardPorts": [10000, 10001],
   "portsAttributes": {
     "10000": {
-      "label": "Watermarks Remover API",
+      "label": "Watermarks Remover REST API",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    },
+    "10001": {
+      "label": "Watermarks Remover MCP",
       "onAutoForward": "notify",
       "visibility": "public"
     }

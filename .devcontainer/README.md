@@ -1,25 +1,19 @@
 # GitHub Codespaces deployment
 
-This Codespaces configuration runs both supported service surfaces:
+This configuration runs two service surfaces:
 
-- REST API: forwarded port 10000
-- MCP Streamable HTTP gateway: forwarded port 10001, endpoint `/mcp`
+- REST API: forwarded port 10000, protected by `WATERMARKS_SERVER_API_KEY`.
+- MCP Streamable HTTP gateway: forwarded port 10001, endpoint `/mcp`, protected by OAuth 2.1 authorization code + PKCE.
 
-Both services require the repository-scoped Codespaces secret
-`WATERMARKS_SERVER_API_KEY`. The MCP endpoint uses bearer authentication.
-Do not put the key in this repository or in plugin files.
+The repository-scoped Codespaces secrets required are:
 
-The MCP gateway returns short-lived (15-minute) download URLs for cleaned
-outputs. The gateway constructs those links from the Codespaces forwarded
-hostname. The Codespaces ports are public so ChatGPT can reach them; the
-MCP API remains protected by the bearer key.
+- `WATERMARKS_SERVER_API_KEY`: private bearer key for the original REST API.
+- `WATERMARKS_OAUTH_PASSPHRASE`: private passphrase used on the OAuth approval page when connecting ChatGPT.
 
-The native REST API matches the service contract used by the separate
-`remove-ai-marks` skill. The MCP gateway exposes equivalent chat tools
-`get_capabilities`, `inspect_file`, and `clean_file`.
+Do not put either secret in this repository or the plugin package. The OAuth server uses dynamic client registration, PKCE, short-lived access tokens, rotating refresh tokens, and a password-protected approval page. Tokens and DCR clients are kept in memory; stopping/restarting the Codespace means ChatGPT may need to reconnect and the owner must approve again.
 
-The text-rewrite backend is not configured by default. Deterministic Unicode
-cleaning and supported file/container metadata operations are available
-subject to the live capability report. Pixel-level operations and statistical
-text rewriting must not be claimed unless their optional backends are installed
-and reported by the service.
+The MCP server advertises per-tool OAuth scope metadata and protected-resource discovery. The Codespaces ports are public so ChatGPT can reach them, but tool calls require OAuth tokens. The OAuth approval page requires the private passphrase.
+
+The MCP gateway returns short-lived (15-minute) download URLs for cleaned outputs. The gateway constructs these links from the Codespaces forwarded hostname.
+
+The text-rewrite backend is not configured by default. Deterministic Unicode cleaning and supported file/container metadata operations are available subject to the live capability report. Pixel-level operations and statistical text rewriting must not be claimed unless their optional backends are installed and reported by the service.

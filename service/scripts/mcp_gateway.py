@@ -14,7 +14,7 @@ import sys
 import time
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, parse_qs
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
